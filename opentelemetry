@@ -1,0 +1,62 @@
+using System;
+using System.Windows;
+using OpenTelemetry;
+using OpenTelemetry.Trace;
+
+namespace YourNamespace
+{
+    public partial class App : Application
+    {
+        // Hold a reference to the tracer provider for proper shutdown.
+        private TracerProvider tracerProvider;
+
+        protected override void OnStartup(StartupEventArgs e)
+        {
+            // Programmatically configure OpenTelemetry.
+            tracerProvider = Sdk.CreateTracerProviderBuilder()
+                // Add your application's source name.
+                .AddSource("YourWpfApp")
+                // Set a sampler (here, AlwaysOn to record all traces).
+                .SetSampler(new AlwaysOnSampler())
+                // Configure the OTLP exporter.
+                .AddOtlpExporter(otlpOptions =>
+                {
+                    // Replace with your actual OTLP/Elastic APM endpoint.
+                    otlpOptions.Endpoint = new Uri("https://your-otlp-endpoint.example.com");
+                })
+                .Build();
+
+            // Get a tracer from the provider.
+            var tracer = tracerProvider.GetTracer("YourWpfApp");
+
+            // Start a span representing the application startup event.
+            using (var span = tracer.StartActiveSpan("ApplicationStartup"))
+            {
+                // Add a custom attribute for the startup time.
+                span.SetAttribute("StartupTime", DateTime.UtcNow.ToString("o"));
+
+                try
+                {
+                    // Place any startup logic here.
+                    // For example: Initialize services, load configuration, etc.
+                }
+                catch (Exception ex)
+                {
+                    // Record the exception in the span.
+                    span.RecordException(ex);
+                    span.SetStatus(OpenTelemetry.Trace.Status.Error.WithDescription(ex.Message));
+                    throw;
+                }
+            }
+
+            base.OnStartup(e);
+        }
+
+        protected override void OnExit(ExitEventArgs e)
+        {
+            // Ensure graceful shutdown of the tracer provider.
+            tracerProvider?.Dispose();
+            base.OnExit(e);
+        }
+    }
+}
