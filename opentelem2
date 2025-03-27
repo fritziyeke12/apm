@@ -14,17 +14,16 @@ namespace YourNamespace
         {
             // Configure the OpenTelemetry resource with your service name.
             var resource = ResourceBuilder.CreateDefault()
-                .AddService(serviceName: "YourWpfApp");  // Important: sets the service name
+                .AddService("YourWpfApp");  // This sets the service name
 
-            // Setup the tracer provider with OTLP exporter.
+            // Setup the tracer provider with the OTLP exporter.
             tracerProvider = Sdk.CreateTracerProviderBuilder()
                 .SetResourceBuilder(resource)
-                .AddSource("WpfStartup")  // Name of the activity source
+                .AddSource("WpfStartup")  // Specify the name of the activity source.
                 .AddOtlpExporter(options =>
                 {
-                    // Set your OTLP endpoint. Adjust the URL to match your endpoint.
+                    // Set your OTLP endpoint. Adjust the URL as needed.
                     options.Endpoint = new Uri("https://your-apm-endpoint.example.com");
-                    // You can configure additional options (e.g., headers, timeout) here.
                 })
                 .Build();
 
@@ -32,13 +31,13 @@ namespace YourNamespace
             var tracer = tracerProvider.GetTracer("WpfStartup");
 
             // Start a span for the application startup event.
-            using (var span = tracer.StartActiveSpan("ApplicationStartup", out var activeSpan))
+            using (var span = tracer.StartActiveSpan("ApplicationStartup"))
             {
                 // Add an attribute for the startup time.
-                activeSpan.SetAttribute("StartupTime", DateTime.UtcNow.ToString("o"));
+                span.SetAttribute("StartupTime", DateTime.UtcNow.ToString("o"));
 
                 // Execute your startup logic here.
-                // For example: initialize services, load configurations, etc.
+                // For example: initialize resources, load configurations, etc.
             }
 
             base.OnStartup(e);
